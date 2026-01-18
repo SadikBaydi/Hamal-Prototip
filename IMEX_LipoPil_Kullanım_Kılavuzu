@@ -1,0 +1,35 @@
+IMEX LiPo Şarj Aleti Kullanım Rehberi
+LiPo (Lityum Polimer) bataryalar, yüksek performanslı olmalarının yanı sıra doğru şarj edilmediklerinde hassas ve riskli olabilirler.
+Bu rehberde, 3S 11.1V bir LiPo pilin IMEX şarj aleti ile nasıl güvenli şarj edileceği adım adım anlatılmaktadır.
+
+1. Fiziksel Bağlantıların Yapılması
+Ana Güç Bağlantısı: Pilin üzerindeki kalın kablolu sarı soketi (XT60), şarj aletinin üzerindeki ilgili sarı yuvaya takın.
+
+Güç izleme Bağlantısı: Pilin üzerindeki beyaz 4’lü soketi, şarj cihazının yan tarafındaki yuvaya yerleştirin.
+
+Not: Şarj aleti soket yapıları gereği ters bağlantıya izin vermez; soketleri zorlamadan doğru yönde oturduğundan emin olun.
+
+2. Şarj Ayarlarının Yapılması
+Şarj cihazına güç verdikten sonra ekrandaki menüleri kullanarak şu adımları takip edin:
+
+Mod Seçimi: BATT Type tuşuna basarak Lipo pil seçenekleri arasında geçiş yapınız.
+
+Program Seçimi: Enter tuşuna basın. "LiPo BALANCE" (Dengeleme Modu) seçeneğine gelin. LiPo pillerin uzun ömürlü olması için her zaman bu mod önerilir.
+
+Voltaj (V) Ayarı: 3S bir pil kullandığımız için bu kısmı 11.1V (3S) olarak seçin.
+
+Onay: Ayarları tamamladıktan sonra Start/Enter tuşuna bir kez basarak seçimi sabitleyin.
+
+3. Şarj işlemini Başlatma ve İzleme
+Başlatma: Start/Enter tuşuna basılı tutun. Cihaz pili kontrol edecek ve onay isteyecektir. Tekrar Enter’a bastığınızda şarj işlemi başlar.
+
+Hücre Takibi: Şarj sırasında INC (Artırma) tuşuna basarak her bir hücrenin (cell) anlık voltaj değerini görebilirsiniz.
+
+4. Kritik Voltaj Değerleri ve Güvenlik
+LiPo pillerin sağlığını korumak için şu değerlere mutlaka dikkat edilmelidir:
+
+Minimum Sınır: Hücre başına voltaj 3.7V’un altına düşmemelidir. 3.7V altı, hücrelerin kimyasal yapısına zarar vererek pilin ömrünü bitirebilir.
+
+Maksimum Sınır: Şarj işlemi sırasında hücreler maksimum 4.2V değerine ulaşır.
+
+Otomatik Kesme: Pil tamamen dolduğunda şarj aleti sesli uyarı verir ve akımı otomatik olarak keser.
