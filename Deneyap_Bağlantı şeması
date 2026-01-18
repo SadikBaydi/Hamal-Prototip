@@ -1,0 +1,34 @@
+Sol Motor Parçası             Nereye Bağlanacak?
+
+Motor Kablosu 1,              Motor Sürücü OUT1
+Motor Kablosu 2,              Motor Sürücü OUT2
+Encoder Kırmızı,              Deneyap 3.3V
+Encoder Siyah,                Deneyap GND
+Encoder Sarı (Sinyal),        Deneyap D13
+Encoder Yeşil (Sinyal),       Deneyap D14
+Sürücü IN1,                   Deneyap A1
+Sürücü IN2,                   Deneyap A0
+
+
+Sağ Motor Parçası             Nereye Bağlanacak?
+
+Motor Kablosu 1,              Motor Sürücü OUT3
+Motor Kablosu 2,              Motor Sürücü OUT4
+Encoder Kırmızı,              Deneyap 3.3V
+Encoder Siyah,                Deneyap GND
+Encoder Sarı (Sinyal),        Deneyap D8
+Encoder Yeşil (Sinyal),       Deneyap D9
+Sürücü IN3,                   Deneyap A2
+Sürücü IN4,                   Deneyap A3
+
+
+BNO085 Pin                    Nereye Bağlanacak?
+
+VIN / VCC,                    Deneyap 3.3V
+GND,                          Deneyap GND
+CS,                           Deneyap D4
+INT,                          Deneyap D0
+RST,                          Deneyap D12
+SCK / SCL,                    Deneyap SCK
+MOSI / SDA,                   Deneyap MOSI
+MISO / SDO,                   Deneyap MISO
