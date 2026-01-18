@@ -1,0 +1,146 @@
+#include <Arduino.h>
+#include <Adafruit_BNO08x.h>
+#include <SPI.h>
+
+// --- AYARLAR ---
+float SAG_DUZELTME_CARPANI = 1.0227;
+float TUR_BASINA_ADIM = 1980.0; 
+float TEKER_CAPI = 7.4;         
+float TEKER_CEVRESI = TEKER_CAPI * 3.14159;
+
+int anaHiz = 150; 
+int yon = 1; 
+
+// --- PIN TANIMLAMALARI ---
+#define SOL_MOTOR_PWM1  A1  
+#define SOL_MOTOR_PWM2  A0
+#define SAG_MOTOR_PWM1  A2
+#define SAG_MOTOR_PWM2  A3
+
+#define SOL_ENC_A    D13  
+#define SOL_ENC_B    D14
+#define SAG_ENC_A    D8 
+#define SAG_ENC_B    D9
+
+#define BNO08X_CS   D4
+#define BNO08X_INT  D0  
+#define BNO08X_RST  D12
+
+Adafruit_BNO08x bno08x(BNO08X_RST);
+sh2_SensorValue_t sensorValue;
+
+volatile long solEncoderHam = 0;
+volatile long sagEncoderHam = 0;
+
+// IMU Değişkenleri
+float yaw = 0, pitch = 0, roll = 0;
+float offsetYaw = 0, offsetPitch = 0, offsetRoll = 0;
+bool baslangicOfsetiAlindi = false;
+
+// --- INTERRUPT ---
+void IRAM_ATTR okuSolEncoder() {
+  if (digitalRead(SOL_ENC_A) != digitalRead(SOL_ENC_B)) solEncoderHam++;
+  else solEncoderHam--;
+}
+
+void IRAM_ATTR okuSagEncoder() {
+  if (digitalRead(SAG_ENC_A) != digitalRead(SAG_ENC_B)) sagEncoderHam++; 
+  else sagEncoderHam--;
+}
+
+// --- MOTOR ---
+void motorYaz(int solPwm, int sagPwm, int yon) {
+  solPwm = constrain(solPwm, 0, 255);
+  sagPwm = constrain(sagPwm, 0, 255);
+  if (yon == 1) { 
+    analogWrite(SOL_MOTOR_PWM1, solPwm); analogWrite(SOL_MOTOR_PWM2, 0);
+    analogWrite(SAG_MOTOR_PWM1, sagPwm); analogWrite(SAG_MOTOR_PWM2, 0);
+  } else if (yon == -1) { 
+    analogWrite(SOL_MOTOR_PWM1, 0); analogWrite(SOL_MOTOR_PWM2, solPwm);
+    analogWrite(SAG_MOTOR_PWM1, 0); analogWrite(SAG_MOTOR_PWM2, sagPwm);
+  } else { 
+    analogWrite(SOL_MOTOR_PWM1, 0); analogWrite(SOL_MOTOR_PWM2, 0);
+    analogWrite(SAG_MOTOR_PWM1, 0); analogWrite(SAG_MOTOR_PWM2, 0);
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000); 
+  
+  solEncoderHam = 0;
+  sagEncoderHam = 0;
+  
+  Serial.println("SISTEM ACILIYOR...");
+  
+  pinMode(SOL_MOTOR_PWM1, OUTPUT); pinMode(SOL_MOTOR_PWM2, OUTPUT);
+  pinMode(SAG_MOTOR_PWM1, OUTPUT); pinMode(SAG_MOTOR_PWM2, OUTPUT);
+  pinMode(SOL_ENC_A, INPUT_PULLUP); pinMode(SOL_ENC_B, INPUT_PULLUP);
+  pinMode(SAG_ENC_A, INPUT_PULLUP); pinMode(SAG_ENC_B, INPUT_PULLUP);
+
+  attachInterrupt(digitalPinToInterrupt(SOL_ENC_A), okuSolEncoder, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(SAG_ENC_A), okuSagEncoder, CHANGE);
+
+  if (!bno08x.begin_SPI(BNO08X_CS, BNO08X_INT)) {
+    Serial.println("IMU HATASI!");
+  } else {
+    Serial.println("IMU Baglandi. Sifirlaniyor...");
+    bno08x.enableReport(SH2_GAME_ROTATION_VECTOR);
+    delay(500);
+    
+    // Sensörün kendine gelmesi için
+    for(int i=0; i<10; i++) {
+      if (bno08x.getSensorEvent(&sensorValue)) { }
+      delay(10);
+    }
+  }
+}
+
+void loop() {
+  // 1. IMU VERİLERİ
+  if (bno08x.getSensorEvent(&sensorValue)) {
+    if (sensorValue.sensorId == SH2_GAME_ROTATION_VECTOR) {
+      float qi = sensorValue.un.gameRotationVector.i;
+      float qj = sensorValue.un.gameRotationVector.j;
+      float qk = sensorValue.un.gameRotationVector.k;
+      float qr = sensorValue.un.gameRotationVector.real;
+      double sqr = qr * qr; double sqi = qi * qi; double sqj = qj * qj; double sqk = qk * qk;
+
+      float rawYaw = atan2(2.0 * (qi * qj + qk * qr), (sqi - sqj - sqk + sqr)) * (180.0 / M_PI);
+      float rawPitch = asin(-2.0 * (qi * qk - qj * qr) / (sqi + sqj + sqk + sqr)) * (180.0 / M_PI);
+      float rawRoll = atan2(2.0 * (qj * qk + qi * qr), (-sqi - sqj + sqk + sqr)) * (180.0 / M_PI);
+
+      if (!baslangicOfsetiAlindi) {
+        offsetYaw = rawYaw; offsetPitch = rawPitch; offsetRoll = rawRoll;
+        baslangicOfsetiAlindi = true;
+      }
+      yaw = rawYaw - offsetYaw; pitch = rawPitch - offsetPitch; roll = rawRoll - offsetRoll;
+    }
+  }
+
+  // 2. ENCODER HESAPLARI (Çarpanlı)
+  long solCorrected = solEncoderHam; 
+  // Sağ veriyi 1.0227 ile çarpıp ekranda eşitlenmiş halini gösteriyoruz
+  long sagCorrected = (float)sagEncoderHam * SAG_DUZELTME_CARPANI; 
+
+  // --- MOTOR SÜRME (MÜDAHALE YOK) ---
+  // Burası çok önemli: Hiçbir düzeltme (fark hesabı) yapmadan
+  // direkt verdiğin 150 hızını motorlara iletiyoruz.
+  motorYaz(anaHiz, anaHiz, yon);
+
+  // Mesafe hesabı
+  float gidilenYolCM = (float)solCorrected / TUR_BASINA_ADIM * TEKER_CEVRESI;
+  
+  // 3. EKRANA YAZDIR
+  Serial.print("ACI(X,Y,Z): "); 
+  Serial.print(roll, 1); Serial.print(", ");
+  Serial.print(pitch, 1); Serial.print(", ");
+  Serial.print(yaw, 1);
+  
+  Serial.print(" | SOL: "); Serial.print(solCorrected); 
+  Serial.print(" SAG: "); Serial.print(sagCorrected);
+  
+  Serial.print(" | YOL: "); Serial.print(gidilenYolCM, 1); Serial.println("cm");
+
+  delay(50);
+}
